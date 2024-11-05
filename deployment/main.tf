@@ -74,7 +74,7 @@ resource "aws_launch_template" "ecs_launch_template" {
 
               # Clone your Node.js app from the Git repository (replace with your repo)
               cd /home/ec2-user
-              git clone https://github.com/Fabrizzio-Esquivel-UNAS/HolaMundoCloud2.git nodeapp
+              git clone https://github.com/Fabrizzio-Esquivel-UNAS/ConciertoCristoCI.git nodeapp
               cd nodeapp
 
               # Build the Docker image
