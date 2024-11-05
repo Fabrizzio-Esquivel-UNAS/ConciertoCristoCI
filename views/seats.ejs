@@ -6,13 +6,38 @@
   <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
-  <h1>Asientos para el Concierto de Cristo</h1>
-  <div class="seats">
-    <% seats.forEach(seat => { %>
-      <div class="seat <%= seat.status %>">
-        Asiento <%= seat.id %> - <%= seat.status === 'disponible' ? 'Disponible' : 'Ocupado' %>
-      </div>
-    <% }) %>
-  </div>
+  <h1>Asientos para el Concierto</h1>
+  <div id="seats-container" class="seats"></div>
+
+  <script>
+    async function loadSeats() {
+      const response = await fetch('/seats');
+      const seats = await response.json();
+      const container = document.getElementById('seats-container');
+      
+      container.innerHTML = seats.map(seat => `
+        <div class="seat ${seat.status}" onclick="toggleStatus(${seat.id})">
+          Asiento ${seat.id} - ${seat.status === 'disponible' ? 'Disponible' : 'Ocupado'}
+        </div>
+      `).join('');
+    }
+
+    async function toggleStatus(id) {
+      const seatElement = document.querySelector(`.seat:nth-child(${id})`);
+      const currentStatus = seatElement.classList.contains('disponible') ? 'ocupado' : 'disponible';
+
+      await fetch(`/seats/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: currentStatus })
+      });
+
+      loadSeats(); // Recargar los asientos después de la actualización
+    }
+
+    loadSeats();
+  </script>
 </body>
 </html>

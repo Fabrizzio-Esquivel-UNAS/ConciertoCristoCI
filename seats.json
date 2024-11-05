@@ -1,9 +1,0 @@
-{
-    "seats": [
-      { "id": 1, "status": "disponible" },
-      { "id": 2, "status": "disponible" },
-      { "id": 3, "status": "disponible" },
-      { "id": 4, "status": "disponible" }
-    ]
-  }
-  
