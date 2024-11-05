@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Concierto de Cristo - Asientos</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <h1>Asientos para el Concierto de Cristo</h1>
+  <div class="seats">
+    <% seats.forEach(seat => { %>
+      <div class="seat <%= seat.status %>">
+        Asiento <%= seat.id %> - <%= seat.status === 'disponible' ? 'Disponible' : 'Ocupado' %>
+      </div>
+    <% }) %>
+  </div>
+</body>
+</html>

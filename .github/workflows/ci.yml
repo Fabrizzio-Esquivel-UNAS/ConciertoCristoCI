@@ -1,0 +1,88 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  install-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: |
+          echo "Running as user $(whoami)"
+          echo "INSTALLING NPM ......"
+          npm install
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: install-dependencies
+    steps:
+      - name: Set up SSH key
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > ec2_key.pem
+          chmod 600 ec2_key.pem
+
+      - name: Delete previous distribution on EC2
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ec2-user@"$EC2_HOST" << 'EOF'
+            #!/bin/bash
+            # Replace "nodeapp" with the container ID or name if necessary
+            CONTAINER_ID=$(sudo docker ps -q --filter "ancestor=nodeapp")
+            if [ -n "$CONTAINER_ID" ]; then
+                echo "Stopping Docker container..."
+                sudo docker stop "$CONTAINER_ID"
+                echo "Removing Docker container..."
+                sudo docker rm "$CONTAINER_ID"
+            else
+                echo "No running container found for image 'nodeapp'."
+            fi
+
+            # Stop and remove the previous Docker container (ignore errors if not found)
+            echo "Removing Docker image..."
+            sudo docker rmi nodeapp || true
+
+            # Remove the old application directory
+            sudo rm -rf /home/ec2-user/nodeapp
+            echo "Listing /home/ec2-user/:"
+            ls /home/ec2-user/
+          EOF
+
+      - name: Build and Run Docker Container on EC2
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ec2-user@"$EC2_HOST" << 'EOF'
+            #!/bin/bash
+
+            # Clone your Node.js app from the Git repository (replace with your repo)
+            cd /home/ec2-user
+            git clone https://github.com/Fabrizzio-Esquivel-UNAS/HolaMundoCloud2.git nodeapp
+            cd nodeapp
+
+            # Build and run the Docker container
+            sudo docker build -t nodeapp .
+            sudo docker run -d -p 80:3000 --name nodeapp nodeapp
+          EOF
+
+      - name: Clean up SSH key
+        run: rm ec2_key.pem
